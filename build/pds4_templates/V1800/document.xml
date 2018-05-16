@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Product_Document xmlns="http://pds.nasa.gov/pds4/pds/v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://pds.nasa.gov/pds4/pds/v1 http://pds.nasa.gov/pds4/schema/released/pds/v1/PDS4_PDS_1800.xsd">
+    <Identification_Area>
+        <logical_identifier>urn:nasa:pds:vgr_iris_recalib:document:_________</logical_identifier>
+        <version_id>1.0</version_id>
+        <title>Document File for the Voyager IRIS Recalibrated Data</title> <!-- OR the title of the document -->
+        <information_model_version>1.8.0.0</information_model_version>
+        <product_class>Product_Document</product_class>
+        <Citation_Information> 
+            <author_list>Cottini, Valeria; Gorius, Nicolas</author_list>
+            <editor_list>Neakrase, Lynn</editor_list>
+            <publication_year>2018</publication_year>
+            <keyword>_________</keyword>
+            <description>_________</description>
+        </Citation_Information>
+        <Modification_History>
+            <Modification_Detail>
+                <modification_date>2018-03-09</modification_date>
+                <version_id>1.0</version_id>
+                <description>Initial Template Setup</description>
+            </Modification_Detail>
+        </Modification_History>
+    </Identification_Area>
+    <Reference_List> <!-- Copy Internal/External_Reference sections as needed -->
+        <Internal_Reference>
+            <lid_reference>urn:nasa:pds:context:instrument:_________</lid_reference>
+            <reference_type>document_to_instrument</reference_type>
+        </Internal_Reference>
+        <External_Reference>
+            <doi>_________</doi>
+            <reference_text>_________</reference_text>
+            <description>_________</description>
+        </External_Reference>
+    </Reference_List>
+    <Document>
+        <revision_id>1.0</revision_id>
+        <document_name>_________</document_name>
+        <author_list>_________</author_list>  
+        <copyright>_________</copyright>
+        <publication_date>yyyy-mm-dd</publication_date> <!-- Could also be just the Year -->
+        <document_editions>1</document_editions>
+        <description>_________</description>
+        <Document_Edition>
+            <edition_name>____________</edition_name> <!-- Filename or document name --> 
+            <language>English</language>
+            <files>1</files>
+            <Document_File>
+                <file_name>_________</file_name> <!-- filename.ext -->
+                <local_identifier>_________</local_identifier> <!-- filename -->
+                <document_standard_id>_________</document_standard_id> <!-- PDF/A , PNG, JPG, 7-Bit ASCII Text, Rich Text ... etc. -->
+            </Document_File>
+        </Document_Edition>
+    </Document>
+</Product_Document>

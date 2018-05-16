@@ -1,0 +1,23 @@
+
+<File_Area_Observational_Supplemental>
+    <File>
+        <file_name>_________</file_name>
+        <local_identifier>_________</local_identifier>
+        <creation_date_time>2015-03-17T09:26:00</creation_date_time>
+        <file_size unit="byte">_________</file_size>
+        <records>_________</records>
+        <comment>
+            _________
+        </comment>
+    </File>
+    <Stream_Text>
+        <local_identifier>_________</local_identifier>
+        <offset unit="byte">_________</offset>
+        <object_length unit="byte">_________</object_length>
+        <parsing_standard_id>_________</parsing_standard_id>
+        <description>
+            _________
+        </description>
+        <record_delimiter>Carriage-Return Line-Feed</record_delimiter>
+    </Stream_Text>
+</File_Area_Observational_Supplemental>
