@@ -1,11 +1,9 @@
-"""
-K. Sweebe
-crawl.py
-
-Elsa uses crawl.py within the build app to scour JPL's Starbase Repository for PDS4 label information.
-
-"""
-
+# crawl.py
+# authors:
+#    k
+# purpose:
+#    Elsa uses crawl.py within the  Crawl Starbase app to scour JPL's Starbase Repository for PDS4 
+#    Label information.
 
 from lxml import etree
 import urllib2, urllib
@@ -44,8 +42,14 @@ def mission_list():
 
     return list_of_missions
 
+# crawl.mission_tuple takes in a mission_list and turns the list into 2-tuples.
+def mission_tuple():
+    list_of_missions = mission_list()
+    tuple_of_missions = ((k, k.title()) for k in list_of_missions)
+    return tuple_of_missions
 
-# crawl.facility_list() finds the facility url's and the facility names.
+
+# crawl.facility_list():
 def facility_list():
 
     starbase_url = 'https://starbase.jpl.nasa.gov/pds4/context-pds4/facility/Product/'
@@ -98,7 +102,7 @@ def facility_list():
 
     return [list_of_facilities_for_url, list_of_facilities_title]
                 
-# makes a tuple of facilities from two lists =|.  Python is so readable that sometimes comments are awkward.
+
 def facility_tuple():
 
     facilities = facility_list()
@@ -109,18 +113,19 @@ def facility_tuple():
     return tuple_of_facilities
 
 
+    
 
 
-# crawl.mission_tuple takes in a mission_list and turns the list into 2-tuples.
-def mission_tuple():
-    list_of_missions = mission_list()
-    tuple_of_missions = ((k, k.title()) for k in list_of_missions)
-    return tuple_of_missions
+
+
+
+
+
+
 
 
 # -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
 # The following are crawlers used to obtain information specific to the build a bundle process.
-
 
 # crawl.investigation is used to crawl the investigation products for a given mission's instrument 
 # host(s).  A new entry, instrument_host_string_list is added to context_dict and then context_dict
@@ -229,10 +234,22 @@ def instrument_host(context_dict):
                 i = InstrumentForm().save(commit=False)
                 i.instrument_host = h
                 i.raw_data = instrument
+
+                #      -----      -----      -----      -----      -----      -----      -----
+		# CHECK IF COMMENT FIRST.
+                if instrument_root[0][0].text.startswith(' Special case'):
+                    # Then it's a comment.  
+                    # When rebuilding the PHX bundles with elsa, it was noticed that a comment
+                    # was appearing in the labels that was throwing the following static method of
+                    # finding lid's off.
+                    i.lid = instrument_root[1][0].text
                 i.lid = instrument_root[0][0].text
                 i.title = instrument_root[2][0].text
                 i.type_of = instrument_root[2][1].text
                 i.save()
+
+
+                #      -----      -----      -----      -----      -----      -----      -----
                                 
             elif element.text[21:27] == 'target':
                 count_targs += 1
@@ -289,4 +306,3 @@ def facility(context_dict):
     
 
             
-
