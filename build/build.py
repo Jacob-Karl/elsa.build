@@ -72,9 +72,36 @@ def Bundle(request, form):
     bundle.directory = bundle_path
     bundle.save()
 
-    # Read Product_Bundle
-    print os.getcwd()
+    # Make Product_Bundle
+    #     1. Grow Product_Bundle tree.
+    Product_Bundle_Root = etree.Element('Product_Bundle', nsmap = NAMESPACE_MAP)
+    Identification_Area = etree.SubElement(Product_Bundle_Root, 'Identification_Area')    
+    Context_Area = etree.SubElement(Product_Bundle_Root, 'Context_Area')
+    Reference_List = etree.SubElement(Product_Bundle_Root, 'Reference_List')
+    Bundle = etree.SubElement(Product_Bundle_Root, 'Bundle')
 
+    #     2. Grow Identification_Area
+    logical_identifier = etree.SubElement(Identification_Area, 'logical_identifier')
+    logical_identifier.text = bundle.lid
+    version_id = etree.SubElement(Identification_Area, 'version_id')
+    version_id.text = '1.0'
+    title = etree.SubElement(Identification_Area, 'title')
+    bundle_title = title_case(bundle.name)   # MINI PROJECT - Change to a model function
+    title.text = bundle_title
+    information_model_version = etree.SubElement(Identification_Area, 'information_model_version')
+    information_model_version.text = bundle.version
+    product_class = etree.SubElement(Identification_Area, 'product_class')
+    product_class.text = 'Product_Bundle'        
+    Alias_List = etree.SubElement(Identification_Area, 'Alias_List')
+    Citation_Information = etree.SubElement(Identification_Area, 'Citation_Information')
+    Modification_History = etree.SubElement(Identification_Area, 'Modification_History')    
+
+    #     3. Grow Context_Area
+    Time_Coordinates = etree.SubElement(Context_Area, 'Time_Coordinates')
+    Investigation_Area = etree.SubElement(Context_Area, 'Investigation_Area')
+    Observing_System = etree.SubElement(Context_Area, 'Observing_System')
+    name = etree.SubElement(Observing_System, 'name')
+    
 
     #     4. Write Product_Bundle to file in User Bundle Directory
     label = 'bundle_{0}.xml'.format(bundle.name)
@@ -1095,17 +1122,19 @@ def Target(request, bundle, target):
         root = tree.getroot()
         root_tag = etree.QName(root)
 
-        if root_tag.localname is 'Product_Bundle' or 'Product_Collection':
-            # Locate Observing System
-            Observing_System = root[1][2]
 
-            # Add Instrument Host to Observing System
-            Observing_System_Component = etree.SubElement(Observing_System, 'Observing_System_Component')
-            name = etree.SubElement(Observing_System_Component, 'name')
+        # Are there specifics on Target?  This code was copy and pasted from adding an Instrument_Host to an Observing_System_Component.  
+        if root_tag.localname is 'Product_Bundle' or 'Product_Collection':
+            # Locate Context_Area
+            Context_Area = root[1]
+
+            # Add Target to Target Identification
+            Target_Identification = etree.SubElement(Context_Area, 'Target_Identification')
+            name = etree.SubElement(Target_Identification, 'name')
             name.text = target.title.title()
-            targ_type = etree.SubElement(Observing_System_Component, 'type')
+            targ_type = etree.SubElement(Target_Identification, 'type')
             targ_type.text = target.type_of
-            Internal_Reference = etree.SubElement(Observing_System_Component, 'Internal_Reference')
+            Internal_Reference = etree.SubElement(Target_Identification, 'Internal_Reference')
             lid_reference = etree.SubElement(Internal_Reference, 'lid_reference')
             lid_reference.text = target.lid
             reference_type = etree.SubElement(Internal_Reference, 'reference_type')
