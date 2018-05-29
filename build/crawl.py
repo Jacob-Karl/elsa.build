@@ -3,7 +3,16 @@
 #    k
 # purpose:
 #    Elsa uses crawl.py within the  Crawl Starbase app to scour JPL's Starbase Repository for PDS4 
-#    Label information.
+#    Label information.  
+#
+#    Currently, crawl.py gets missions, facilities, investigations, instrument hosts, instruments, and targets.
+#    As you (TPAGAN) read through this, you'll see that my logic is really intertwined and needs to become more modular.
+#    For example, take a look at def instrument_host().  You will see that instrument_host() actually gets instrument_host data
+#    data as we wanted but we also got instrument and target data.  Instrument and Target data should be seperate functions.
+#
+#    We should also have a seperate function that opens starbase so that we can call it once, then do all of our operations
+#    within that one call to starbase rather than call starbase within every function (which is what it currently does).  
+#    #NewbMistakes.  Oh Well. (k)
 
 from lxml import etree
 import urllib2, urllib
@@ -14,6 +23,7 @@ from .models import Facility
 
 # -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
 # The following crawlers are used to make lists or tuples for user Choices.  These are generated on the fly to ensure ELSA is always up to date with Starbase.
+# These do not create model objects.  For those, please look to the next section.
 
 # crawl.mission_list is used to crawl the Starbase repository's PDS4 investigation products for a full list of missions listed.
 def mission_list():
@@ -49,7 +59,7 @@ def mission_tuple():
     return tuple_of_missions
 
 
-# crawl.facility_list():
+# crawl.facility_list() gets the current listed facilities from Starbase.
 def facility_list():
 
     starbase_url = 'https://starbase.jpl.nasa.gov/pds4/context-pds4/facility/Product/'
@@ -74,15 +84,20 @@ def facility_list():
             new_starbase_url = 'https://starbase.jpl.nasa.gov/pds4/context-pds4/facility/Product/{0}'.format(attribute_i_want)
             tree = etree.ElementTree(file=urllib2.urlopen(new_starbase_url))
             root = tree.getroot()
-            facility_lid = root[0][0]
-            facility_title = root[0][2]
+            facility_lid = root[0][0]      ### TPAGAN ###
+            facility_title = root[0][2]    # All this is static search.
+                                           # We need to make this dynamic. (k)
              
             tag_in_question = root[1]
             tag_in_question = etree.QName(tag_in_question)
 
-            if tag_in_question.localname == 'Facility':
-                facility_name = root[1][0]
-                facility_type_of = root[1][1]
+            if tag_in_question.localname == 'Facility':    ### TPAGAN ###
+                facility_name = root[1][0]                 # Static search as well.
+                facility_type_of = root[1][1]              #
+                                                           # Also, can you figure out why
+                                                           # this if/else conditional exists.
+                                                           # Is it because of a comment?
+                                                           # Please let me know next meeting. (k)
 
             # This else statement might require future changes.  Currently, this is used for Facility DSN because it has a reference list before the facility tag.  This might require future changes as the facility context products mature.
             else:
@@ -102,7 +117,7 @@ def facility_list():
 
     return [list_of_facilities_for_url, list_of_facilities_title]
                 
-
+# facility_tuple Creates a 2-tuple containing a list of facilities cleaned for urls and a list of facilities cleaned for title.  We could probably do this better by editing the Facility Model Object to include clean functions so we can simply call the desired format.
 def facility_tuple():
 
     facilities = facility_list()
@@ -126,10 +141,19 @@ def facility_tuple():
 
 # -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -
 # The following are crawlers used to obtain information specific to the build a bundle process.
+#
+# These create model objects
+#
+
 
 # crawl.investigation is used to crawl the investigation products for a given mission's instrument 
 # host(s).  A new entry, instrument_host_string_list is added to context_dict and then context_dict
 # is returned
+#
+#    Note:  We need to change this name from investigation to instrument_host since we are crawling
+#           for the instrument_host.   (k)
+#
+#
 def investigation(context_dict):
 
     # Dictionary Extractions
@@ -146,6 +170,7 @@ def investigation(context_dict):
 
     # Create etree from XML label found at mission investigation URL
     #  NOTE: Mission.name should already be in the correct format, all uppercase with underscores
+    #  NOTE ABOUT NOTE:  This is probably going to need to be verified once build database is restructured.
     investigation_url = 'https://starbase.jpl.nasa.gov/pds4/context-pds4/investigation/Product/PDS4_mission_{0}_1.0.xml'.format(Mission.name)
     investigation = urllib2.urlopen(investigation_url)
     investigation_tree = etree.ElementTree(file=investigation)
@@ -173,10 +198,19 @@ def investigation(context_dict):
     #context_dict['instrument_host_url_list'] = instrument_host_url_list
     return context_dict
 
+
+
+
 # crawl.instrument_host is used to crawl a mission's instrument host(s) for instrument host data and
 # associated instruments and targets.  This data is then used to create InstrumentHost, Instrument, and 
 # Target models.  A new entry, instrument_host_list, is added to context_dict and then context_dict is
 # returned.  instrument_host_list is a list of InstrumentHost models.
+#
+#
+#     Note:  This name could be changed from instrument_host to instrument_host_data.
+#
+#
+#
 def instrument_host(context_dict):
 
     # Dictionary Extractions
@@ -286,21 +320,7 @@ def instrument_host(context_dict):
         
 
 
-##################################################################################################
-# Facility Crawl
 
-# crawl.investigation is used to crawl the investigation products for a given mission's instrument 
-# host(s).  A new entry, instrument_host_string_list is added to context_dict and then context_dict
-# is returned
-def facility(context_dict):
-
-    # Dictionary Extractions
-    facility = context_dict['facility']
-
-    return context_dict
-
-# NEED TO WORK ON THIS NEXT.  MAKING LIST IN IDEAS & INTENTIONS OF WHAT TO DO.
-# I started this and realized I cannot just start here, there's a lot of prep work.
 
 
     
