@@ -1,11 +1,16 @@
-"""
-  K. Sweebe
-  chocolate.py
+#    chocolate.py
 
 
-  Elsa is very fond of chocolate.  Despite being locked in her room, Elsa ate all the triple-double-fudge sundaes she wanted.  Therefore, this document contains all of the functions that aren't a necessity for Elsa, yet make Elsa's life better.
 
-"""
+# Elsa is very fond of chocolate.  Despite being locked in her room, Elsa ate all the triple-double-fudge
+# sundaes she wanted.  Therefore, this document contains all of the functions that aren't a necessity
+# for Elsa, yet make Elsa's life better.
+
+
+
+
+
+
 
 
 # imports for MediaInfo and MediaObject
@@ -17,15 +22,16 @@ import urllib2
 import os
 import tarfile
 
-# --- Useful functions ---
+#    Useful functions
+
+
+
 #   FIRST:  Do you know what a Python function is?  If not, check out the following resources.
 #             1. A brief introduction to what a Python function is.
 #                https://en.wikibooks.org/wiki/Python_Programming/Functions
 #             2. A short exercise to show you how a function works. (Requires Codeacademy account)
 #                https://www.codecademy.com/courses/learn-python/lessons/functions/exercises/min?action=lesson_resume
 
-
-# A python function 
 
 
 # replaceAll replaces all of a given instance of s with t
@@ -85,6 +91,8 @@ def print_file_path(directory):
             if filename.endswith(".xml"):
                 print(os.path.join(dirpath, filename))
 
+
+# get_xml_path returns a list of all files ending in .xml.  If we wanted to do one better, we could simply create our function to test against something like 'product_' and '.xml'; however, this is beyond me.  
 def get_xml_path(directory):
     xml_path_list = []
     for dirpath, dirnames, filenames in os.walk(directory):
@@ -95,7 +103,7 @@ def get_xml_path(directory):
 
     return xml_path_list
 
-
+# is_product_bundle checks if a file is a product bundle
 def is_product_bundle(xml_path):
     base = os.path.basename(xml_path)
 
@@ -104,6 +112,7 @@ def is_product_bundle(xml_path):
     else:
         return False
 
+# is_product_collection checks if a file is a product collection
 def is_product_collection(xml_path):
     base = os.path.basename(xml_path)
 
@@ -112,14 +121,28 @@ def is_product_collection(xml_path):
     else:
         return False
 
+# choices doesn't do anything right now. ---> Garbaje.
 def choices( type_of_choice ):
     if type_of_choice is 'mission':
         # then the choice function returns a list of the most up-to-date missions listed in Starbase.
         # 1. Crawl to starbase.jpl.nasa.gov/pds4/context-pds4/investigation/Product/
         pass
         
+# open_label opens an xml label given the path to the xml label and returns an open label object and a tree.
+def open_label(label_path):
+    parser = etree.XMLParser(remove_blank_text=True, remove_comments=True)
+    tree = etree.parse(label_path, parser)
+    label_object = open(label_path, 'w')
+    label_root = tree.getroot()
+    return [label_object, label_root]
 
-# Tests
+# close_label closes an xml label given the label object and the root of the tree.
+def close_label(label_object, label_root):
+    tree = etree.tostring(label_root, pretty_print=True, encoding='utf-8', xml_declaration=True)
+    label_object.write(tree)
+    label_object.close()    
+
+#    Tests
 # We can test the above functions by making function calls.  To make a function call, simply state the name of the function and give it paramaters.  Por ejemplo: name_of_function(parameter1, parameter2).  When the computer reads this line, it grabs the function defined above named name_of_function.  It then passes two parameters, namely parameter1 and parameter2.  By running this script in the terminal, we can see the output of the stated function.  The output is normally whatever the function returns but this isn't always the case.  The output could also include the creation of new model objects in the database, new labels or directories in the archive, or a deletion of a model object in a directory, or a deletion of labels or directories in the archive, ... .  
 is_product_bundle('/export/atmos1/htdocs/elsa/archive/test_user_01/development_test_bundle/bundle_development_test.xml')
 
