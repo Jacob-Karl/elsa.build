@@ -341,36 +341,75 @@ def citation_information(request, pk_bundle):
         return render(request, 'build/citation_information/citation_information.html', context_dict)
     return render(request, 'build/citation_information/citation_information.html',context_dict)
 
+
+
+
 def document(request, pk_bundle):
     print '-------------------------------------------------------------------------'
     print '\n\n--------------------- Add Document with ELSA ------------------------'
     print '------------------------------ DEBUGGER ---------------------------------'
 
     # Get forms
-    form_document = DocumentForm(request.POST or None)
+    form_product_document = ProductDocumentForm(request.POST or None)
     bundle = Bundle.objects.get(pk=pk_bundle)
 
     # Declare context_dict for template
     context_dict = {
-        'form_document':form_document,
+        'form_product_document':form_product_document,
         'bundle':bundle,
 
     }
 
     # After ELSAs friend hits submit, if the forms are completed correctly, we should enter
-    # this conditional.
+    # this conditional.  We must do [] things: 1. Create the Document model object, 2. Add a Product_Document label to the Document Collection, 3. Add the Document as an Internal_Reference to the proper labels (like Product_Bundle and Product_Collection).
     print '\n\n---------------------- DOCUMENT INFO -------------------------------'
-    if form_document.is_valid():
-        print 'form_document is valid'  
+    if form_product_document.is_valid():
+        print 'form_product_document is valid'  
 
         # Create Document Model Object
-        document = form_document.save(commit=False)
-        document.bundle = bundle
-        document.save()
+        product_document = form_product_document.save(commit=False)
+        product_document.bundle = bundle
+        product_document.save()
 
-        # Create Product_Document
+        # Build Product_Document label using the base case template found in templates/pds4/basecase
+        print '\n---------------Start Build Product_Document Base Case------------------------'
+        product_document.build_base_case()
+        # Open label - returns a list where index 0 is the label object and 1 is the tree
+        print ' ... Opening Label ... '
+        label_list = open_label(product_document.label())
+        label_object = label_list[0]
+        label_root = label_list[1]
+        # Fill label - fills 
+        print ' ... Filling Label ... '
+        label_root = product_document.fill_base_case(label_root)
+        # Close label
+        print ' ... Closing Label ... '
+        close_label(label_object, label_root)           
+        print '---------------- End Build Product_Document Base Case -------------------------' 
 
-        # Open Label
-        # Fill Label
-        # Close Label  
+        # Add Document info to proper labels.  For now, I simply have Product_Bundle and Product_Collection.  This list will need to be updated.
+        print '\n---------------Start Build Internal_Reference for Document-------------------'
+        all_labels = []
+        product_bundle = Product_Bundle.objects.get(bundle=bundle)
+        product_collections_list = Product_Collection.objects.filter(bundle=bundle)
+
+        all_labels.append(product_bundle)
+        all_labels.extend(product_collections_list)  
+
+        for label in all_labels:
+            print '- Label: {}'.format(label)
+            print ' ... Opening Label ... '
+            label_list = open_label(label.label())
+            label_object = label_list[0]
+            label_root = label_list[1]
+        
+            # Build Internal_Reference
+            print ' ... Building Internal_Reference ... '
+            label_root = label.build_internal_reference(label_root, product_document)
+
+            # Close appropriate label(s)
+            print ' ... Closing Label ... '
+            close_label(label_object, label_root)
+        print '\n----------------End Build Internal_Reference for Document-------------------'
+        
     return render(request, 'build/document/document.html',context_dict)

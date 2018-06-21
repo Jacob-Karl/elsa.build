@@ -32,6 +32,7 @@ urlpatterns = [
 
 
     # Document
+    url(r'^(?P<pk_bundle>\d+)/document/$', views.document, name='document'),
 
 
     # Context

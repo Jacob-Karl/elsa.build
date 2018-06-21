@@ -62,18 +62,81 @@ class CollectionsForm(forms.ModelForm):
 
     class Meta:
         model = Collections
-        exclude = ('bundle',)
+        exclude = ('',)
 
+class MissionForm(forms.ModelForm):
+    class Meta:
+        model = Mission
+        exclude = ('',)
+
+class InstrumentHostForm(forms.ModelForm):
+    class Meta:
+        model = InstrumentHost
+        exclude = ('',)
+
+class InstrumentForm(forms.ModelForm):
+    class Meta:
+        model = Instrument
+        exclude = ('',)
+
+class TargetForm(forms.ModelForm):
+    class Meta:
+        model = Target
+        exclude = ('',)
+
+
+class Facility(forms.ModelForm):
+    class Meta:
+        model = Facility
+        exclude = ('',)
+
+"""
+12.1  Document
+
+Root Class:Tagged_NonDigital_Object
+Role:Concrete
+
+Class Description:The Document class describes a document.
+
+Steward:pds
+Namespace Id:pds
+Version Id:2.0.0.0
+  	Entity 	Card 	Value/Class 	Ind
+
+Hierarchy	Tagged_NonDigital_Object	 	 	 
+        	. TNDO_Supplemental	 	 	 
+ 	        . . Document	 	 	 
+
+Subclass	none	 	 	 
+
+Attribute
+	acknowledgement_text	0..1	 	 
+ 	author_list     	0..1	 	 
+ 	copyright       	0..1	 	 
+ 	description	        0..1	 	 
+ 	document_editions	0..1	 	 
+ 	document_name	        0..1  An exec decision has been made to make document_name required
+ 	doi	                0..1	 	 
+ 	editor_list	        0..1	 	 
+ 	publication_date	1	 	 
+ 	revision_id	        0..1	 	 
+
+Inherited Attribute	none	 	 	 
+Association	        data_object	        1	Digital_Object	 
+ 	                has_document_edition	1..*	Document_Edition	 
+Inherited Association	none	 	 	 
+Referenced from	Product_Document	 	 	 
+"""
 class ProductDocumentForm(forms.ModelForm):
+    document_name = forms.CharField(required=True)
+    publication_date = forms.CharField(required=True)
     acknowledgement_text = forms.CharField(required=False)
     author_list = forms.CharField(required=False)
     copyright = forms.CharField(required=False)
     description = forms.CharField(required=False)
     document_editions = forms.CharField(required=False)
-    document_name = forms.CharField(required=False)
     doi = forms.CharField(required=False)
     editor_list = forms.CharField(required=False)
-    publication_date = forms.CharField(required=True)
     revision_id = forms.CharField(required=False)
 
     class Meta:

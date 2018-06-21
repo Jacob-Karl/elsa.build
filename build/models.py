@@ -98,6 +98,482 @@ class Version(models.Model):
     def get_validators(self):
         pass
 
+"""
+10.21  Investigation_Area
+
+Root Class:Product_Components
+Role:Concrete
+
+Class Description:The Investigation_Area class provides information about an investigation (mission, observing campaign or other coordinated, large-scale data collection effort).
+
+Steward:pds
+Namespace Id:pds
+Version Id:1.1.0.0
+  	Entity 	Card 	Value/Class 	Ind
+
+Hierarchy	Product_Components	 	 	 
+ 	        . Investigation_Area	 	 	 
+Subclass	none	 	 	 
+Attribute	name	1	 	 
+ 	        type	1	Individual Investigation	 
+ 	 	 	        Mission	 
+         	 	 	Observing Campaign	 
+ 	         	 	Other Investigation	 
+Inherited Attribute	none	 	 	 
+Association	        internal_reference	1..*	Internal_Reference	 
+Inherited Association	none	 	 	 
+
+Referenced from	Context_Area	 	 	 
+        	Observation_Area	 	 	 
+"""
+class Investigation(models.Model):
+    INVESTIGATION_TYPES = [
+        ('Individual Investigation','Individual Investigation'),
+        ('Mission','Mission'),
+        ('Observing Campaign','Observing Campaign'),
+        ('Other Investigation','Other Investigation'),
+    ]
+    name = models.CharField(max_length=MAX_CHAR_FIELD)
+    type_of = models.CharField(max_length=MAX_CHAR_FIELD, choices=INVESTIGATION_TYPES)
+
+
+
+
+
+
+
+
+
+"""
+14.2  Facility
+
+Root Class:Tagged_NonDigital_Object
+Role:Concrete
+
+Class Description:The Facility class provides a name and address for a terrestrial observatory or laboratory.
+
+Steward:pds
+Namespace Id:pds
+Version Id:1.0.0.0
+  	Entity 	Card 	Value/Class 	Ind
+Hierarchy	Tagged_NonDigital_Object	 	 	 
+         	. TNDO_Context	 	 	 
+ 	        . . Facility	 	 	 
+Subclass	none	 	 	 
+Attribute	address	        0..1	 	 
+ 	        country	        0..1	 	 
+ 	        description	0..1	 	 
+ 	        name	        0..1	 	 
+ 	        type	        1	Laboratory	 
+ 	 	         	        Observatory	 
+
+Inherited Attribute	none	 	 	 
+Association	        data_object	1	Physical_Object	 
+Inherited Association	none	 	 	 
+
+Referenced from	Product_Context	 	 	 
+"""
+@python_2_unicode_compatible
+class Facility(models.Model):
+    FACILITY_TYPES = [
+        ('Laboratory','Laboratory'),
+        ('Observatory','Observatory'),
+    ]
+
+    address = models.CharField(max_length=MAX_CHAR_FIELD)
+    country = models.CharField(max_length=MAX_CHAR_FIELD)
+    description = models.CharField(max_length=MAX_TEXT_FIELD) # Use a widget in forms if need be 
+    investigation = models.ManyToManyField(Investigation)
+    name = models.CharField(max_length=MAX_CHAR_FIELD)
+    logical_identifier = models.CharField(max_length=MAX_CHAR_FIELD)
+    type_of = models.CharField(max_length=MAX_CHAR_FIELD, choices=FACILITY_TYPES) 
+
+    # Accessors
+    def name_lid_case(self):
+        # Convert name to lower case
+        name_edit = self.name.lower()
+        # Convert spaces to underscores
+        name_edit = replace_all(name_edit, ' ', '_')
+
+    # Meta
+    def __str__(self):
+        return self.name
+
+
+
+"""
+10.25  Mission_Area
+
+Root Class:Product_Components
+Role:Concrete
+
+Class Description:The mission area allows the insertion of mission specific metadata.
+
+Steward:pds
+Namespace Id:pds
+Version Id:1.0.0.0
+  	Entity 	Card 	Value/Class 	Ind
+
+Hierarchy	Product_Components	 	 	 
+        	. Mission_Area	 	 	 
+Subclass        	none	 	 	 
+Attribute	        none	 	 	 
+Inherited Attribute	none	 	 	 
+Association	        none	 	 	 
+Inherited Association	none	 	 	 
+Referenced from	Context_Area	 	 	 
+         	Observation_Area	 	 	 
+"""
+@python_2_unicode_compatible
+class Mission(models.Model):
+    investigation = models.ManyToManyField(Investigation)
+    name = models.CharField(max_length=MAX_CHAR_FIELD)
+
+    # Accessors
+    def name_lid_case(self):
+        # Convert name to lower case
+        name_edit = self.name.lower()
+        # Convert spaces to underscores
+        name_edit = replace_all(name_edit, ' ', '_')
+        
+
+    # Meta
+    def __str__(self):
+        return self.name
+
+
+"""
+14.4  Instrument_Host
+
+Root Class:Tagged_NonDigital_Object
+Role:Concrete
+
+Class Description:The Instrument Host class provides a description of the physical object upon which an instrument is mounted.
+
+Steward:pds
+Namespace Id:pds
+Version Id:1.3.0.0
+  	Entity 	Card 	Value/Class 	Ind
+Hierarchy	Tagged_NonDigital_Object	 	 	 
+        	. TNDO_Context	 	 	 
+        	. . Instrument_Host	 	 	 
+Subclass	none	 	 	 
+
+Attribute	description	                        1	 	 
+        	instrument_host_version_id *Deprecated*	0..1	 	 
+        	naif_host_id	                        0..1	 	 
+        	name	                                0..1	 	 
+        	serial_number	                        0..1	 	 
+        	type	                                1	Earth Based	 
+ 	 	 	                                        Earth-based	 
+ 	 	 	                                        Lander	 
+ 	 	 	                                        Rover	 
+ 	 	 	                                        Spacecraft	 
+        	version_id *Deprecated*	                0..1	 	 
+
+Inherited Attribute	none	 	 	 
+Association     	data_object	1	Physical_Object	 
+Inherited Association	none	 	 	 
+
+Referenced from	Product_Context	 	 	 
+"""
+@python_2_unicode_compatible
+class InstrumentHost(models.Model):
+    INSTRUMENT_HOST_TYPES = [
+        ('Earth Based','Earth Based'),
+        ('Lander', 'Lander'),
+        ('Rover', 'Rover'),
+        ('Spacecraft','Spacecraft'),
+    ]
+    description = models.CharField(max_length=MAX_TEXT_FIELD)
+    mission = models.ForeignKey(Mission, on_delete=models.CASCADE)
+    name = models.CharField(max_length=MAX_CHAR_FIELD)
+    naif_host_id = models.CharField(max_length=MAX_CHAR_FIELD)
+    serial_number = models.CharField(max_length=MAX_CHAR_FIELD)
+    type_of = models.CharField(max_length=MAX_CHAR_FIELD, choices=INSTRUMENT_HOST_TYPES)
+
+    # Meta
+    def __str__(self):
+        return self.name
+
+
+"""
+14.3  Instrument
+
+Root Class:Tagged_NonDigital_Object
+Role:Concrete
+
+Class Description:The Instrument class provides a description of a physical object that collects data.
+
+Steward:pds
+Namespace Id:pds
+Version Id:1.3.0.0
+  	Entity 	Card 	Value/Class 	Ind
+Hierarchy	Tagged_NonDigital_Object	 	 	 
+        	. TNDO_Context	 	 	 
+ 	        . . Instrument	 	 	 
+Subclass	none	 	 	 
+
+Attribute	description	        1	 	 
+        	model_id	        0..1	 	 
+                naif_instrument_id	0..1	 	 
+        	name	                0..1	 	 
+ 	        serial_number	        0..1	 	 
+ 	        subtype	                0..*	 	 
+ 	        type	                1..*	Accelerometer	 
+                        	 	 	Alpha Particle Detector	 
+                        	 	 	Alpha Particle X-Ray Spectrometer	 
+                        	 	 	Altimeter	 
+                        	 	 	Anemometer	 
+                        	 	 	Atmospheric Sciences	 
+                        	 	 	Atomic Force Microscope	 
+                        	 	 	Barometer	 
+                        	 	 	Biology Experiments	 
+                        	 	 	Bolometer	 
+                        	 	 	Camera	 
+                        	 	 	Cosmic Ray Detector	 
+                        	 	 	Drilling Tool	 
+                        	 	 	Dust	 
+                        	 	 	Dust Detector	 
+                        	 	 	Electrical Probe	 
+                        	 	 	Energetic Particle Detector	 
+                        	 	 	Gamma Ray Detector	 
+                        	 	 	Gas Analyzer	 
+                        	 	 	Gravimeter	 
+                        	 	 	Grinding Tool	 
+                        	 	 	Hygrometer	 
+                        	 	 	Imager	 
+                        	 	 	Imaging Spectrometer	 
+                        	 	 	Inertial Measurement Unit	 
+                        	 	 	Infrared Spectrometer	 
+                        	 	 	Interferometer	 
+                        	 	 	Laser Induced Breakdown Spectrometer	 
+                        	 	 	Magnetometer	 
+                        	 	 	Mass Spectrometer	 
+                        	 	 	Microscope	 
+                        	 	 	Microwave Spectrometer	 
+                        	 	 	Moessbauer Spectrometer	 
+                        	 	 	Naked Eye	 
+                        	 	 	Neutral Particle Detector	 
+                        	 	 	Neutron Detector	 
+                        	 	 	Particle Detector	 
+                        	 	 	Photometer	 
+                        	 	 	Plasma Analyzer	 
+                        	 	 	Plasma Detector	 
+                        	 	 	Plasma Wave Spectrometer	 
+                        	 	 	Polarimeter	 
+                        	 	 	Radar	 
+                        	 	 	Radio Science	 
+                        	 	 	Radio Spectrometer	 
+                        	 	 	Radio Telescope	 
+                        	 	 	Radio-Radar	 
+                        	 	 	Radiometer	 
+                        	 	 	Reflectometer	 
+                        	 	 	Regolith Properties	 
+                        	 	 	Robotic Arm	 
+                        	 	 	Seismometer	 
+                        	 	 	Small Bodies Sciences	 
+                        	 	 	Spectrograph	 
+                        	 	 	Spectrograph Imager	 
+                        	 	 	Spectrometer	 
+                        	 	 	Thermal Imager	 
+                        	 	 	Thermal Probe	 
+                        	 	 	Thermometer	 
+                        	 	 	Ultraviolet Spectrometer	 
+                        	 	 	Weather Station	 
+                        	 	 	Wet Chemistry Laboratory	 
+                        	 	 	X-ray Detector	 
+                        	 	 	X-ray Diffraction Spectrometer	 
+                        	 	 	X-ray Fluorescence Spectrometer	 
+Inherited Attribute	none	 	 	 
+Association      	data_object	1	Physical_Object	 
+Inherited Association	none	 	 	 
+
+Referenced from	Product_Context	 	 	 
+"""
+class Instrument(models.Model):
+    INSTRUMENT_TYPES = [
+        ('Accelerometer','Accelerometer'),
+        ('Alpha Particle Detector','Alpha Particle Detector'),
+        ('Alpha Particle X-Ray Spectrometer','Alpha Particle X-Ray Spectrometer'),
+        ('Altimeter','Altimeter'),
+        ('Anemometer','Anemometer'),
+        ('Atmospheric Sciences','Atmospheric Sciences'),
+        ('Atomic Force Microscope','Atomic Force Microscope'),
+        ('Barometer','Barometer'),
+        ('Biology Experiments','Biology Experiments'),
+        ('Bolometer','Bolometer'),
+        ('Camera','Camera'),
+        ('Cosmic Ray Detector','Cosmic Ray Detector'),
+        ('Drilling Tool','Drilling Tool'),
+        ('Dust','Dust'),
+        ('Dust Detector','Dust Detector'),
+        ('Electrical Probe','Electrical Probe'),
+        ('Energetic Particle Detector','Energetic Particle Detector'),
+        ('Gamma Ray Detector','Gamma Ray Detector'),
+        ('Gas Analyzer','Gas Analyzer'),
+        ('Gravimeter','Gravimeter'),
+        ('Grinding Tool','Grinding Tool'),
+        ('Hygrometer','Hygrometer'),
+        ('Imager','Imager'),
+        ('Imaging Spectrometer','Imaging Spectrometer'),
+        ('Inertial Measurement Unit','Inertial Measurement Unit'),
+        ('Infrared Spectrometer','Infrared Spectrometer'),
+        ('Interferometer','Interferometer'),
+        ('Laser Induced Breakdown Spectrometer','Laser Induced Breakdown Spectrometer'),
+        ('Magnetometer','Magnetometer'),
+        ('Mass Spectrometer','Mass Spectrometer'),
+        ('Microscope','Microscope'),
+        ('Microwave Spectrometer','Microwave Spectrometer'),
+        ('Moessbauer Spectrometer','Moessbauer Spectrometer'),
+        ('Naked Eye','Naked Eye'),
+        ('Neutral Particle Detector','Neutral Particle Detector'),
+        ('Neutron Detector','Neutron Detector'),
+        ('Particle Detector','Particle Detector'),
+        ('Photometer','Photometer'),
+        ('Plasma Analyzer','Plasma Analyzer'),
+        ('Plasma Detector','Plasma Detector'),
+        ('Plasma Wave Spectrometer','Plasma Wave Spectrometer'),
+        ('Polarimeter','Polarimeter'),
+        ('Radar','Radar'),
+        ('Radio Science','Radio Science'),
+        ('Radio Spectrometer','Radio Spectrometer'),
+        ('Radio Telescope','Radio Telescope'),
+        ('Radio-Radar','Radio-Radar'),
+        ('Radiometer','Radiometer'),
+        ('Reflectometer','Reflectometer'),
+        ('Regolith Properties','Regolith Properties'),
+        ('Robotic Arm','Robotic Arm'),
+        ('Seismometer','Seismometer'),
+        ('Small Bodies Sciences','Small Bodies Sciences'),
+        ('Spectrograph','Spectrograph'),
+        ('Spectrograph Imager','Spectrograph Imager'),
+        ('Spectrometer','Spectrometer'),
+        ('Thermal Imager','Thermal Imager'),
+        ('Thermal Probe','Thermal Probe'),
+        ('Thermometer','Thermometer'),
+        ('Ultraviolet Spectrometer','Ultraviolet Spectrometer'),
+        ('Weather Station','Weather Station'),
+        ('Wet Chemistry Laboratory','Wet Chemistry Laboratory'),
+        ('X-ray Detector','X-ray Detector'),
+        ('X-ray Diffraction Spectrometer','X-ray Diffraction Spectrometer'),
+        ('X-ray Fluorescence Spectrometer','X-ray Fluorescence Spectrometer'),
+    ]
+    description = models.CharField(max_length=MAX_TEXT_FIELD)
+    facility = models.ForeignKey(Facility, on_delete=models.CASCADE)  # This might be incorrect.
+    instrument_host = models.ForeignKey(InstrumentHost)
+    model_id = models.CharField(max_length=MAX_CHAR_FIELD)
+    naif_instrument_id = models.CharField(max_length=MAX_CHAR_FIELD)
+    name = models.CharField(max_length=MAX_CHAR_FIELD)
+    serial_number = models.CharField(max_length=MAX_CHAR_FIELD)
+    subtype = models.CharField(max_length=MAX_CHAR_FIELD)
+    type_of = models.CharField(max_length=MAX_CHAR_FIELD, choices=INSTRUMENT_TYPES)
+
+    # Meta
+    def __str__(self):
+        return self.name
+
+
+"""
+14.8  Target
+
+Root Class:Tagged_NonDigital_Object
+Role:Concrete
+Class Description:The Target class provides a description of a physical object that is the object of data collection.
+Steward:pds
+Namespace Id:pds
+Version Id:1.3.0.0
+  	Entity 	Card 	Value/Class 	Ind
+Hierarchy	Tagged_NonDigital_Object	 	 	 
+ 	. TNDO_Context	 	 	 
+ 	. . Target	 	 	 
+Subclass	none	 	 	
+Attribute	description	1	 	 
+ 	name	0..1	 	 
+ 	type	0..*	Asteroid	 
+ 	 	 	Calibration	 
+ 	 	 	Calibration Field	 
+ 	 	 	Calibrator	 
+ 	 	 	Comet	 
+ 	 	 	Dust	 
+ 	 	 	Dwarf Planet	 
+ 	 	 	Equipment	 
+ 	 	 	Exoplanet System	 
+ 	 	 	Galaxy	 
+ 	 	 	Globular Cluster	 
+ 	 	 	Lunar Sample	 
+ 	 	 	Meteorite	 
+ 	 	 	Meteoroid	 
+ 	 	 	Meteoroid Stream	 
+ 	 	 	Nebula	 
+ 	 	 	Open Cluster	 
+ 	 	 	Planet	 
+ 	 	 	Planetary Nebula	 
+ 	 	 	Planetary System	 
+ 	 	 	Plasma Cloud	 
+ 	 	 	Plasma Stream	 
+ 	 	 	Ring	 
+ 	 	 	Satellite	 
+ 	 	 	Star	 
+ 	 	 	Star Cluster	 
+ 	 	 	Sun	 
+ 	 	 	Synthetic Sample	 
+ 	 	 	Terrestrial Sample	 
+ 	 	 	Trans-Neptunian Object	 
+Inherited Attribute	none	 	 	 
+Association	data_object	1	Physical_Object	 
+Inherited Association	none	 	 	 
+Referenced from	Product_Context	 	 	 
+"""
+@python_2_unicode_compatible
+class Target(models.Model):
+    TARGET_TYPES = [
+        ('Asteroid','Asteroid'),
+        ('Calibration','Calibration'),
+        ('Calibration Field','Calibration Field'),
+        ('Calibrator','Calibrator'),
+        ('Comet','Comet'),
+        ('Dust','Dust'),
+        ('Dwarf Planet','Dwarf Planet'),
+        ('Equipment','Equipment'),
+        ('Exoplanet System','Exoplanet System'),
+        ('Galaxy','Galaxy'),
+        ('Globular Cluster','Globular Cluster'),
+        ('Lunar Sample','Lunar Sample'),
+        ('Meteorite','Meteorite'),
+        ('Meteoroid','Meteoroid'),
+        ('Meteoroid Stream','Meteoroid Stream'),
+        ('Nebula','Nebula'),
+        ('Open Cluster','Open Cluster'),
+        ('Planet','Planet'),
+        ('Planetary Nebula','Planetary Nebula'),
+        ('Planetary System','Planetary System'),
+        ('Plasma Cloud','Plasma Cloud'),
+        ('Plasma Stream','Plasma Stream'),
+        ('Ring','Ring'),
+        ('Satellite','Satellite'),
+        ('Star','Star'),
+        ('Star Cluster','Star Cluster'),
+        ('Sun','Sun'),
+        ('Synthetic Sample','Synthetic Sample'),
+        ('Target Analog', 'Target Analog'),
+        ('Terrestrial Sample','Terrestrial Sample'),
+        ('Trans-Neptunian Object','Trans-Neptunian Object'),
+    ]
+    description = models.CharField(max_length=MAX_CHAR_FIELD)
+    facility = models.ForeignKey(Facility, on_delete=models.CASCADE)
+    mission = models.ForeignKey(Mission, on_delete=models.CASCADE)
+    name = models.CharField(max_length=MAX_CHAR_FIELD)
+    type_of = models.CharField(max_length=MAX_CHAR_FIELD, choices=TARGET_TYPES)
+
+    # Meta
+    def __str__(self):
+        return self.name
+
+
+
+
+
 
 @python_2_unicode_compatible
 class Bundle(models.Model):
@@ -192,18 +668,19 @@ class Bundle(models.Model):
         return name_edit
 
     """
-    """
-    def name_lid_case(self):
-        return self.name_file_case()
-
-    # Cleaners
-    """
-    clean_name
+    name_lid_case
          - Returns the name in proper lid case.
              - Maximum Length: 255 characters
              - Allowed characters: lower case letters, digits, dash, period, underscore
              - Delimiters are colons (So no delimiters in name).
     """
+    def name_lid_case(self):
+        return self.name_file_case()
+
+    def lid(self):
+        return 'urn:{0}:{1}'.format(self.user.userprofile.agency, self.name_lid_case())
+
+
 
     # Constructors
     """ 
@@ -368,7 +845,7 @@ class Product_Bundle(models.Model):
 
         #     lid
         logical_identifier = Identification_Area.find('{}logical_identifier'.format(NAMESPACE))
-        logical_identifier.text = 'urn:{0}:{1}'.format(self.bundle.user.userprofile.agency, self.bundle.name_lid_case()) # where agency is something like nasa:pds
+        logical_identifier.text = self.bundle.lid()
         
 
         #     version_id --> Note:  Can be changed to be more dynamic once we implement bundle versions (which is different from PDS4 versions)
@@ -385,6 +862,24 @@ class Product_Bundle(models.Model):
         
         return Product_Bundle
 
+    """
+        build_internal_reference builds and fills the Internal_Reference information within the Reference_List of Product_Bundle.  The relation is used within reference_type to associate what the bundle is related to, like bundle_to_document.  Therefore, relation is a model object in ELSA, like Document.  The possible relations as of V1A00 are errata, document, investigation, instrument, instrument_host, target, resource, associate.
+    """
+
+    def build_internal_reference(self, root, relation):
+
+        Reference_List = root.find('{}Reference_List'.format(NAMESPACE))
+
+        Internal_Reference = etree.SubElement(Reference_List, 'Internal_Reference')
+
+        lid_reference = etree.SubElement(Internal_Reference, 'lid_reference')
+        lid_reference.text = relation.lid()
+
+        reference_type = etree.SubElement(Internal_Reference, 'reference_type')
+        reference_type.text = 'bundle_to_{}'.format(relation.reference_type())   
+
+        return root   
+
     # Meta
     def __str__(self):
         return '{}: Product Bundle'.format(self.bundle)
@@ -394,11 +889,6 @@ class Product_Bundle(models.Model):
         return
 
     # Validators
-
-
-
-
-
 
 
 
@@ -478,7 +968,7 @@ class Product_Collection(models.Model):
 
         #     lid
         logical_identifier = Identification_Area.find('{}logical_identifier'.format(NAMESPACE))
-        logical_identifier.text = 'urn:{0}:{1}'.format(self.bundle.user.userprofile.agency, self.bundle.name_lid_case()) # where agency is something like nasa:pds
+        logical_identifier.text = 'urn:{0}:{1}:{2}'.format(self.bundle.user.userprofile.agency, self.bundle.name_lid_case(), self.collection) # where agency is something like nasa:pds
         
 
         #     version_id --> Note:  Can be changed to be more dynamic once we implement bundle versions (which is different from PDS4 versions)
@@ -494,6 +984,24 @@ class Product_Collection(models.Model):
         #information_model_version = self.bundle.version.name_with_dots()
         
         return Product_Collection
+
+    """
+        build_internal_reference builds and fills the Internal_Reference information within the Reference_List of Product_Collection.  The relation is used within reference_type to associate what the collection is related to, like collection_to_document.  Therefore, relation is a model object in ELSA, like Document.  The possible relations as of V1A00 are resource, associate, calibration, geometry, spice kernel, document, browse, context, data, ancillary, schema, errata, bundle, personnel, investigation, instrument, instrument_host, target.
+    """
+
+    def build_internal_reference(self, root, relation):
+
+        Reference_List = root.find('{}Reference_List'.format(NAMESPACE))
+
+        Internal_Reference = etree.SubElement(Reference_List, 'Internal_Reference')
+
+        lid_reference = etree.SubElement(Internal_Reference, 'lid_reference')
+        lid_reference.text = relation.lid()
+
+        reference_type = etree.SubElement(Internal_Reference, 'reference_type')
+        reference_type.text = 'collection_to_{}'.format(relation.reference_type())   
+
+        return root   
 
     # Meta
     def __str__(self):
@@ -530,7 +1038,7 @@ Attribute
  	copyright       	0..1	 	 
  	description	        0..1	 	 
  	document_editions	0..1	 	 
- 	document_name	        0..1	 	 
+ 	document_name	        0..1  An exec decision has been made to make document_name required 
  	doi	                0..1	 	 
  	editor_list	        0..1	 	 
  	publication_date	1	 	 
@@ -560,6 +1068,9 @@ class Product_Document(models.Model):
 
 
     # Accessors
+    def collection(self):
+        return 'document'
+
     def directory(self):
         """
             Documents are found in the Document collection
@@ -572,9 +1083,25 @@ class Product_Document(models.Model):
             This could be improved to ensure disallowed characters for a file name are not contained
             in name.
         """
-        name_edit = document_name.lower()
+        name_edit = self.document_name.lower()
         name_edit = replace_all(name_edit, ' ', '_')
         return name_edit
+
+
+    def label(self):
+        """
+            label returns the physical label location in ELSAs archive
+        """
+        return os.path.join(self.directory(), self.name_label_case())
+
+    def lid(self):
+        return '{0}:document:{1}'.format(self.bundle.lid(), self.name_label_case())
+
+    def reference_type(self):
+        return 'document'
+
+
+
 
 
     # Builders
@@ -593,11 +1120,29 @@ class Product_Document(models.Model):
             
         return
 
+
     def fill_base_case(self, root):
+
         Product_Document = root
 
+        # Fill in Identification_Area
+        Identification_Area = Product_Document.find('{}Identification_Area'.format(NAMESPACE))
+
+        logical_identifier = Identification_Area.find('{}logical_identifier'.format(NAMESPACE))
+        logical_identifier.text =  'urn:{0}:{1}:{2}:{3}'.format(self.bundle.user.userprofile.agency, self.bundle.name_lid_case(), 'document', self.document_name) # where agency is something like nasa:pds
+
+        version_id = Identification_Area.find('{}version_id'.format(NAMESPACE))
+        version_id.text = '1.0'  # Can make this better
+
+        title = Identification_Area.find('{}title'.format(NAMESPACE))
+        title.text = self.document_name
+
+        information_model_version = Identification_Area.find('information_model_version')
+        #information_model_version.text = self.bundle.version.with_dots()   
+        
+        
         # Fill in Document
-        Document = Product_Collection.find('{}Document'.format(NAMESPACE))
+        Document = Product_Document.find('{}Document'.format(NAMESPACE))
         if self.revision_id:
             revision_id = etree.SubElement(Document, 'revision_id')
             revision_id.text = self.revision_id
@@ -621,7 +1166,7 @@ class Product_Document(models.Model):
             copyright.text = self.author_list
         if self.publication_date:  # this should always be true 
             publication_date = etree.SubElement(Document, 'publication_date')
-            copyright.text = self.publication_date
+            publication_date.text = self.publication_date
         if self.document_editions:
             document_editions = etree.SubElement(Document, 'document_editions')
             document_editions.text = self.document_editions   
@@ -630,6 +1175,13 @@ class Product_Document(models.Model):
             description.text = self.description     
 
         return root        
+
+
+    def build_internal_reference(self, root, relation):
+        """
+            build_internal_reference needs to be completed
+        """
+        pass     
 
     # Meta
     def __str__(self):
@@ -786,6 +1338,10 @@ class Citation_Information(models.Model):
     # Meta
     def __str__(self):
         return 'Need to finish this.'
+
+"""
+"""
+#class I
 
     # Admin Stuff
 
