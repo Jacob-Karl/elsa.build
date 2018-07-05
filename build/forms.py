@@ -62,7 +62,12 @@ class CollectionsForm(forms.ModelForm):
 
     class Meta:
         model = Collections
-        exclude = ('',)
+        exclude = ('bundle',)
+
+class DataForm(forms.ModelForm):
+    class Meta:
+        model = Data
+        exclude = ('bundle',)
 
 class MissionForm(forms.ModelForm):
     class Meta:
@@ -154,6 +159,36 @@ class ProductCollectionForm(forms.ModelForm):
     class Meta:
         model = Product_Collection
         exclude = ('bundle', 'collection')
+
+
+class ProductObservationalForm(forms.ModelForm):
+    OBSERVATIONAL_TYPES = [
+
+        ('Table Binary','Table Binary'),
+        ('Table Character','Table Character'),
+        ('Table Delimited','Table Delimited'),
+    ]
+    PURPOSE_TYPES = [
+        ('Calibration','Calibration'),
+        ('Checkout','Checkout'),
+        ('Engineering','Engineering'),
+        ('Navigation','Navigation'),
+        ('Observation Geometry','Observation Geometry'),
+        ('Science','Science'),
+
+    ]
+    purpose = forms.ChoiceField(required=True, choices=PURPOSE_TYPES)
+    title = forms.CharField(required=True)
+    type_of = forms.ChoiceField(required=True, choices=OBSERVATIONAL_TYPES)
+
+    class Meta:
+        model = Product_Observational
+        exclude = ('bundle', 'data', 'processing_level')
+
+class TableForm(forms.ModelForm):
+    class Meta:
+        model = Table
+        exclude = ('product_observational', 'observational_type', 'local_identifier')
 
 
 

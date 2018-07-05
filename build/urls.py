@@ -29,7 +29,9 @@ urlpatterns = [
     # Collections
 
 
-
+    # Data
+    url(r'^(?P<pk_bundle>\d+)/data/$', views.data, name='data'),
+    url(r'^(?P<pk_bundle>\d+)/data/(?P<pk_product_observational>\d+)/$', views.product_observational, name='product_observational'),
 
     # Document
     url(r'^(?P<pk_bundle>\d+)/document/$', views.document, name='document'),

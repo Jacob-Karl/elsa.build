@@ -123,10 +123,10 @@ def build(request):
             # Build Product_Bundle label using the base case template found in
             # templates/pds4/basecase
             print '\n---------------Start Build Product_Bundle Base Case------------------------'
-            product_bundle.build_base_case()
+            product_bundle.build_base_case()  # simply copies baseecase to user bundle directory
             # Open label - returns a list where index 0 is the label object and 1 is the tree
             print ' ... Opening Label ... '
-            label_list = open_label(product_bundle.label())
+            label_list = open_label(product_bundle.label()) #list = [label_object, label_root]
             label_object = label_list[0]
             label_root = label_list[1]
             # Fill label - fills 
@@ -138,7 +138,7 @@ def build(request):
             print '---------------- End Build Product_Bundle Base Case -------------------------'
   
             # Create Collections Model Object and list of Collections, list of Collectables
-            collections = CollectionsForm().save(commit=False)
+            collections = form_collections.save(commit=False)
             collections.bundle = bundle
             collections.save()
             print '\nCollections model object:    {}'.format(collections)
@@ -216,7 +216,6 @@ def bundle(request, pk_bundle):
         return redirect('main:restricted_access')
 
 # The bundle_download view is not a page.  When a user chooses to download a bundle, this 'view' manifests and begins the downloading process.
-
 def bundle_download(request, pk_bundle):
     # Grab bundle directory
     bundle = Bundle.objects.get(pk=pk_bundle)
@@ -342,7 +341,77 @@ def citation_information(request, pk_bundle):
     return render(request, 'build/citation_information/citation_information.html',context_dict)
 
 
+@login_required
+def data(request, pk_bundle): 
+    print '-------------------------------------------------------------------------'
+    print '\n\n---------------------- Add Data with ELSA ---------------------------'
+    print '------------------------------ DEBUGGER ---------------------------------'
 
+    # Get bundle
+    bundle = Bundle.objects.get(pk=pk_bundle)
+
+    # Get forms
+    form_data = DataForm(request.POST or None)
+    form_product_observational = ProductObservationalForm(request.POST or None)
+
+    # Context Dictionary
+    context_dict = {
+        'bundle':bundle,
+        'form_data':form_data,
+        'form_product_observational':form_product_observational,
+    }
+    # After ELSAs friend hits submit, if the forms are completed correctly, we should enter
+    # this conditional.
+    print '\n\n------------------------ DATA INFO ----------------------------------'
+    if form_data.is_valid() and form_product_observational.is_valid():
+
+        # Create Data model object
+        data = form_data.save(commit=False)
+        data.bundle = bundle
+        data.save()
+        print 'Data model object: {}'.format(data)
+
+        # Create Product_Observational model object
+        product_observational = form_product_observational.save(commit=False)
+        product_observational.bundle = bundle
+        product_observational.data = data
+        product_observational.processing_level = data.data_type
+        product_observational.save()
+        print 'Product_Observational model object: {}'.format(product_observational)
+
+        # Create Data Folder corresponding to processing level
+        data.build_directory()
+
+        print '---------------- End Build Product_Observational Base Case -------------------------'
+                # Copy Product_Observational label
+        product_observational.build_base_case()
+
+        # Open label - returns a list of label information where list = [label_object, label_root]
+        print ' ... Opening Label ... '
+        label_list = open_label(product_observational.label())
+        label_object = label_list[0]
+        label_root = label_list[1]
+        # Fill label - fills 
+        print ' ... Filling Label ... '
+        label_root = product_observational.fill_base_case(label_root)
+        # Close label
+        print ' ... Closing Label ... '
+        close_label(label_object, label_root)           
+        print '---------------- End Build Product_Observational Base Case -------------------------'
+
+        # Update context_dict
+        print '\n\n---------------------- UPDATING CONTEXT DICTIONARY -----------------------------'
+        context_dict['data'] = data
+        context_dict['product_observational'] = product_observational  # Needs a fix
+        
+    data_set = Data.objects.filter(bundle=bundle)
+    context_dict['data_set'] = data_set
+    product_observational_set = []
+    for data in data_set:
+        product_observational_set.extend(Product_Observational.objects.filter(data=data))
+    context_dict['product_observational_set'] = product_observational_set
+      
+    return render(request, 'build/data/data.html', context_dict)
 
 def document(request, pk_bundle):
     print '-------------------------------------------------------------------------'
@@ -370,6 +439,7 @@ def document(request, pk_bundle):
         product_document = form_product_document.save(commit=False)
         product_document.bundle = bundle
         product_document.save()
+        print 'Product_Document model object: {}'.format(product_document)
 
         # Build Product_Document label using the base case template found in templates/pds4/basecase
         print '\n---------------Start Build Product_Document Base Case------------------------'
@@ -413,3 +483,54 @@ def document(request, pk_bundle):
         print '\n----------------End Build Internal_Reference for Document-------------------'
         
     return render(request, 'build/document/document.html',context_dict)
+
+
+
+ 
+def product_observational(request, pk_bundle, pk_product_observational):
+
+    print '-------------------------------------------------------------------------'
+    print '\n\n---------------- Add Product_Observational with ELSA ----------------'
+    print '------------------------------ DEBUGGER ---------------------------------'
+
+    bundle = Bundle.objects.get(pk=pk_bundle)
+    product_observational = Product_Observational.objects.get(pk=pk_product_observational)
+    form_product_observational = TableForm(request.POST or None)
+    context_dict = {
+        'bundle':bundle,
+        'product_observational':product_observational,
+        'form_product_observational':form_product_observational,
+
+    }
+
+    print '\n\n----------------- PRODUCT_DOCUMENT INFO -----------------------------'
+    if form_product_observational.is_valid():
+        print 'form_product_observational is valid.'
+        # Create the associated model (Table, Array, Cube, etc...)
+        observational = form_product_observational.save(commit=False)
+        observational.product_observational = product_observational
+        observational.save()
+        print 'observational object: {}'.format(observational)
+        
+
+        print '\n--------- Start Add Observational to Product_Observational -----------------'
+        # Open label
+        print ' ... Opening Label ... '
+        label_list = open_label(product_observational.label())
+        label_object = label_list[0]
+        label_root = label_list[1]
+        print label_root
+
+        # Fill label
+        print ' ... Filling Label ... '
+        label_root = product_observational.fill_observational(label_root, observational)
+
+        # Close label
+        print ' ... Closing Label ... '
+        close_label(label_object, label_root)
+        print '-------------End Add Observational to Product_Observational -----------------'
+        
+    # Now we must grab the observational set to display on ELSA's template for the Product_Observational page.  Right now, this is tables so it is easy.
+        observational_set = Table.objects.filter(product_observational=product_observational)
+    
+    return render(request, 'build/data/table.html', context_dict)

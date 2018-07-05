@@ -42,16 +42,16 @@ def replace_all( r, s, t ):
     return r
 
 # title_case takes in a string r.  Not only does title case use the python function title() to capitalize the first letter of each word, this title case function removes any underscores and replaces it with spaces.
-def title_case(r):
-    r = replace_all( r, '_', ' ')
-    r = r.title()
-    return r
+#def title_case(r):
+#    r = replace_all( r, '_', ' ')
+#    r = r.title()
+#    return r
 
 # lid_case is essentially the opposite of title case (almost).  We ensure all letters are in lowercase and replace any spaces with underscores.
-def lid_case(r):
-    r = replace_all( r, ' ', '_')
-    r = r.lower()
-    return r
+#def lid_case(r):
+#    r = replace_all( r, ' ', '_')
+#    r = r.lower()
+#    return r
 
 
 # make_directory makes a directory at the given path.  If the path already exists, it does nothing.  Without having the second condition, our page would throw an error if the path already exists.  

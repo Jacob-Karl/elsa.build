@@ -11,8 +11,6 @@ from django.utils.encoding import python_2_unicode_compatible
 from shutil import copyfile
 from .chocolate import *
 import datetime
-from lxml import *
-from bs4 import BeautifulSoup
 
 #    Final Variables
 MAX_CHAR_FIELD = 100
@@ -100,48 +98,481 @@ class Version(models.Model):
     def get_validators(self):
         pass
 
-    # Main Functions
-    def version_update(self, version, inFile):
+"""
+10.21  Investigation_Area
 
-	i=0
-	j=0
-	
+Root Class:Product_Components
+Role:Concrete
 
-	#read the bundle and collection files and store their contents in strings.
-	#If the file is invalid a statement will be printed and the function will quit.
-	try:
-		fil = open(inFile,'r')
+Class Description:The Investigation_Area class provides information about an investigation (mission, observing campaign or other coordinated, large-scale data collection effort).
 
-		fileText = fil.read()
+Steward:pds
+Namespace Id:pds
+Version Id:1.1.0.0
+  	Entity 	Card 	Value/Class 	Ind
 
-		fil.close()
-	except:
-		print inFile + " is an invalid file"
-		return
+Hierarchy	Product_Components	 	 	 
+ 	        . Investigation_Area	 	 	 
+Subclass	none	 	 	 
+Attribute	name	1	 	 
+ 	        type	1	Individual Investigation	 
+ 	 	 	        Mission	 
+         	 	 	Observing Campaign	 
+ 	         	 	Other Investigation	 
+Inherited Attribute	none	 	 	 
+Association	        internal_reference	1..*	Internal_Reference	 
+Inherited Association	none	 	 	 
 
-	#change the version number
-	while i<2:
-	    chunk = fileText[j:j+4]
-	    #if a new version is introduced this line will need to be changed
-	    if chunk == "1700" or chunk == "1800" or chunk == "1900" or chunk == "1A00":
-		i+=1
-		fileText = list(fileText)
-		fileText[j+1] = str(version)[1]
-		fileText = "".join(fileText)
-	    j+=1
-	    #prevents the while loop from looping infinately should the if statement fail
-	    if j>len(fileText):
-		print "No valid version number found. If product_bundle.xml and product_collection.xml contain valid version numbers check the conditional in versionModelObject."
-		break
+Referenced from	Context_Area	 	 	 
+        	Observation_Area	 	 	 
+"""
+class Investigation(models.Model):
+    INVESTIGATION_TYPES = [
+        ('Individual Investigation','Individual Investigation'),
+        ('Mission','Mission'),
+        ('Observing Campaign','Observing Campaign'),
+        ('Other Investigation','Other Investigation'),
+    ]
+    name = models.CharField(max_length=MAX_CHAR_FIELD)
+    type_of = models.CharField(max_length=MAX_CHAR_FIELD, choices=INVESTIGATION_TYPES)
 
-	#write the new bundle and collection to the xmls
-	fil = open(inFile,'w')
 
-	fil.write(fileText)
 
-	fil.close()
 
-	pass
+
+
+
+
+
+"""
+14.2  Facility
+
+Root Class:Tagged_NonDigital_Object
+Role:Concrete
+
+Class Description:The Facility class provides a name and address for a terrestrial observatory or laboratory.
+
+Steward:pds
+Namespace Id:pds
+Version Id:1.0.0.0
+  	Entity 	Card 	Value/Class 	Ind
+Hierarchy	Tagged_NonDigital_Object	 	 	 
+         	. TNDO_Context	 	 	 
+ 	        . . Facility	 	 	 
+Subclass	none	 	 	 
+Attribute	address	        0..1	 	 
+ 	        country	        0..1	 	 
+ 	        description	0..1	 	 
+ 	        name	        0..1	 	 
+ 	        type	        1	Laboratory	 
+ 	 	         	        Observatory	 
+
+Inherited Attribute	none	 	 	 
+Association	        data_object	1	Physical_Object	 
+Inherited Association	none	 	 	 
+
+Referenced from	Product_Context	 	 	 
+"""
+@python_2_unicode_compatible
+class Facility(models.Model):
+    FACILITY_TYPES = [
+        ('Laboratory','Laboratory'),
+        ('Observatory','Observatory'),
+    ]
+
+    address = models.CharField(max_length=MAX_CHAR_FIELD)
+    country = models.CharField(max_length=MAX_CHAR_FIELD)
+    description = models.CharField(max_length=MAX_TEXT_FIELD) # Use a widget in forms if need be 
+    investigation = models.ManyToManyField(Investigation)
+    name = models.CharField(max_length=MAX_CHAR_FIELD)
+    logical_identifier = models.CharField(max_length=MAX_CHAR_FIELD)
+    type_of = models.CharField(max_length=MAX_CHAR_FIELD, choices=FACILITY_TYPES) 
+
+    # Accessors
+    def name_lid_case(self):
+        # Convert name to lower case
+        name_edit = self.name.lower()
+        # Convert spaces to underscores
+        name_edit = replace_all(name_edit, ' ', '_')
+
+    # Meta
+    def __str__(self):
+        return self.name
+
+
+
+"""
+10.25  Mission_Area
+
+Root Class:Product_Components
+Role:Concrete
+
+Class Description:The mission area allows the insertion of mission specific metadata.
+
+Steward:pds
+Namespace Id:pds
+Version Id:1.0.0.0
+  	Entity 	Card 	Value/Class 	Ind
+
+Hierarchy	Product_Components	 	 	 
+        	. Mission_Area	 	 	 
+Subclass        	none	 	 	 
+Attribute	        none	 	 	 
+Inherited Attribute	none	 	 	 
+Association	        none	 	 	 
+Inherited Association	none	 	 	 
+Referenced from	Context_Area	 	 	 
+         	Observation_Area	 	 	 
+"""
+@python_2_unicode_compatible
+class Mission(models.Model):
+    investigation = models.ManyToManyField(Investigation)
+    name = models.CharField(max_length=MAX_CHAR_FIELD)
+
+    # Accessors
+    def name_lid_case(self):
+        # Convert name to lower case
+        name_edit = self.name.lower()
+        # Convert spaces to underscores
+        name_edit = replace_all(name_edit, ' ', '_')
+        
+
+    # Meta
+    def __str__(self):
+        return self.name
+
+
+"""
+14.4  Instrument_Host
+
+Root Class:Tagged_NonDigital_Object
+Role:Concrete
+
+Class Description:The Instrument Host class provides a description of the physical object upon which an instrument is mounted.
+
+Steward:pds
+Namespace Id:pds
+Version Id:1.3.0.0
+  	Entity 	Card 	Value/Class 	Ind
+Hierarchy	Tagged_NonDigital_Object	 	 	 
+        	. TNDO_Context	 	 	 
+        	. . Instrument_Host	 	 	 
+Subclass	none	 	 	 
+
+Attribute	description	                        1	 	 
+        	instrument_host_version_id *Deprecated*	0..1	 	 
+        	naif_host_id	                        0..1	 	 
+        	name	                                0..1	 	 
+        	serial_number	                        0..1	 	 
+        	type	                                1	Earth Based	 
+ 	 	 	                                        Earth-based	 
+ 	 	 	                                        Lander	 
+ 	 	 	                                        Rover	 
+ 	 	 	                                        Spacecraft	 
+        	version_id *Deprecated*	                0..1	 	 
+
+Inherited Attribute	none	 	 	 
+Association     	data_object	1	Physical_Object	 
+Inherited Association	none	 	 	 
+
+Referenced from	Product_Context	 	 	 
+"""
+@python_2_unicode_compatible
+class InstrumentHost(models.Model):
+    INSTRUMENT_HOST_TYPES = [
+        ('Earth Based','Earth Based'),
+        ('Lander', 'Lander'),
+        ('Rover', 'Rover'),
+        ('Spacecraft','Spacecraft'),
+    ]
+    description = models.CharField(max_length=MAX_TEXT_FIELD)
+    mission = models.ForeignKey(Mission, on_delete=models.CASCADE)
+    name = models.CharField(max_length=MAX_CHAR_FIELD)
+    naif_host_id = models.CharField(max_length=MAX_CHAR_FIELD)
+    serial_number = models.CharField(max_length=MAX_CHAR_FIELD)
+    type_of = models.CharField(max_length=MAX_CHAR_FIELD, choices=INSTRUMENT_HOST_TYPES)
+
+    # Meta
+    def __str__(self):
+        return self.name
+
+
+"""
+14.3  Instrument
+
+Root Class:Tagged_NonDigital_Object
+Role:Concrete
+
+Class Description:The Instrument class provides a description of a physical object that collects data.
+
+Steward:pds
+Namespace Id:pds
+Version Id:1.3.0.0
+  	Entity 	Card 	Value/Class 	Ind
+Hierarchy	Tagged_NonDigital_Object	 	 	 
+        	. TNDO_Context	 	 	 
+ 	        . . Instrument	 	 	 
+Subclass	none	 	 	 
+
+Attribute	description	        1	 	 
+        	model_id	        0..1	 	 
+                naif_instrument_id	0..1	 	 
+        	name	                0..1	 	 
+ 	        serial_number	        0..1	 	 
+ 	        subtype	                0..*	 	 
+ 	        type	                1..*	Accelerometer	 
+                        	 	 	Alpha Particle Detector	 
+                        	 	 	Alpha Particle X-Ray Spectrometer	 
+                        	 	 	Altimeter	 
+                        	 	 	Anemometer	 
+                        	 	 	Atmospheric Sciences	 
+                        	 	 	Atomic Force Microscope	 
+                        	 	 	Barometer	 
+                        	 	 	Biology Experiments	 
+                        	 	 	Bolometer	 
+                        	 	 	Camera	 
+                        	 	 	Cosmic Ray Detector	 
+                        	 	 	Drilling Tool	 
+                        	 	 	Dust	 
+                        	 	 	Dust Detector	 
+                        	 	 	Electrical Probe	 
+                        	 	 	Energetic Particle Detector	 
+                        	 	 	Gamma Ray Detector	 
+                        	 	 	Gas Analyzer	 
+                        	 	 	Gravimeter	 
+                        	 	 	Grinding Tool	 
+                        	 	 	Hygrometer	 
+                        	 	 	Imager	 
+                        	 	 	Imaging Spectrometer	 
+                        	 	 	Inertial Measurement Unit	 
+                        	 	 	Infrared Spectrometer	 
+                        	 	 	Interferometer	 
+                        	 	 	Laser Induced Breakdown Spectrometer	 
+                        	 	 	Magnetometer	 
+                        	 	 	Mass Spectrometer	 
+                        	 	 	Microscope	 
+                        	 	 	Microwave Spectrometer	 
+                        	 	 	Moessbauer Spectrometer	 
+                        	 	 	Naked Eye	 
+                        	 	 	Neutral Particle Detector	 
+                        	 	 	Neutron Detector	 
+                        	 	 	Particle Detector	 
+                        	 	 	Photometer	 
+                        	 	 	Plasma Analyzer	 
+                        	 	 	Plasma Detector	 
+                        	 	 	Plasma Wave Spectrometer	 
+                        	 	 	Polarimeter	 
+                        	 	 	Radar	 
+                        	 	 	Radio Science	 
+                        	 	 	Radio Spectrometer	 
+                        	 	 	Radio Telescope	 
+                        	 	 	Radio-Radar	 
+                        	 	 	Radiometer	 
+                        	 	 	Reflectometer	 
+                        	 	 	Regolith Properties	 
+                        	 	 	Robotic Arm	 
+                        	 	 	Seismometer	 
+                        	 	 	Small Bodies Sciences	 
+                        	 	 	Spectrograph	 
+                        	 	 	Spectrograph Imager	 
+                        	 	 	Spectrometer	 
+                        	 	 	Thermal Imager	 
+                        	 	 	Thermal Probe	 
+                        	 	 	Thermometer	 
+                        	 	 	Ultraviolet Spectrometer	 
+                        	 	 	Weather Station	 
+                        	 	 	Wet Chemistry Laboratory	 
+                        	 	 	X-ray Detector	 
+                        	 	 	X-ray Diffraction Spectrometer	 
+                        	 	 	X-ray Fluorescence Spectrometer	 
+Inherited Attribute	none	 	 	 
+Association      	data_object	1	Physical_Object	 
+Inherited Association	none	 	 	 
+
+Referenced from	Product_Context	 	 	 
+"""
+class Instrument(models.Model):
+    INSTRUMENT_TYPES = [
+        ('Accelerometer','Accelerometer'),
+        ('Alpha Particle Detector','Alpha Particle Detector'),
+        ('Alpha Particle X-Ray Spectrometer','Alpha Particle X-Ray Spectrometer'),
+        ('Altimeter','Altimeter'),
+        ('Anemometer','Anemometer'),
+        ('Atmospheric Sciences','Atmospheric Sciences'),
+        ('Atomic Force Microscope','Atomic Force Microscope'),
+        ('Barometer','Barometer'),
+        ('Biology Experiments','Biology Experiments'),
+        ('Bolometer','Bolometer'),
+        ('Camera','Camera'),
+        ('Cosmic Ray Detector','Cosmic Ray Detector'),
+        ('Drilling Tool','Drilling Tool'),
+        ('Dust','Dust'),
+        ('Dust Detector','Dust Detector'),
+        ('Electrical Probe','Electrical Probe'),
+        ('Energetic Particle Detector','Energetic Particle Detector'),
+        ('Gamma Ray Detector','Gamma Ray Detector'),
+        ('Gas Analyzer','Gas Analyzer'),
+        ('Gravimeter','Gravimeter'),
+        ('Grinding Tool','Grinding Tool'),
+        ('Hygrometer','Hygrometer'),
+        ('Imager','Imager'),
+        ('Imaging Spectrometer','Imaging Spectrometer'),
+        ('Inertial Measurement Unit','Inertial Measurement Unit'),
+        ('Infrared Spectrometer','Infrared Spectrometer'),
+        ('Interferometer','Interferometer'),
+        ('Laser Induced Breakdown Spectrometer','Laser Induced Breakdown Spectrometer'),
+        ('Magnetometer','Magnetometer'),
+        ('Mass Spectrometer','Mass Spectrometer'),
+        ('Microscope','Microscope'),
+        ('Microwave Spectrometer','Microwave Spectrometer'),
+        ('Moessbauer Spectrometer','Moessbauer Spectrometer'),
+        ('Naked Eye','Naked Eye'),
+        ('Neutral Particle Detector','Neutral Particle Detector'),
+        ('Neutron Detector','Neutron Detector'),
+        ('Particle Detector','Particle Detector'),
+        ('Photometer','Photometer'),
+        ('Plasma Analyzer','Plasma Analyzer'),
+        ('Plasma Detector','Plasma Detector'),
+        ('Plasma Wave Spectrometer','Plasma Wave Spectrometer'),
+        ('Polarimeter','Polarimeter'),
+        ('Radar','Radar'),
+        ('Radio Science','Radio Science'),
+        ('Radio Spectrometer','Radio Spectrometer'),
+        ('Radio Telescope','Radio Telescope'),
+        ('Radio-Radar','Radio-Radar'),
+        ('Radiometer','Radiometer'),
+        ('Reflectometer','Reflectometer'),
+        ('Regolith Properties','Regolith Properties'),
+        ('Robotic Arm','Robotic Arm'),
+        ('Seismometer','Seismometer'),
+        ('Small Bodies Sciences','Small Bodies Sciences'),
+        ('Spectrograph','Spectrograph'),
+        ('Spectrograph Imager','Spectrograph Imager'),
+        ('Spectrometer','Spectrometer'),
+        ('Thermal Imager','Thermal Imager'),
+        ('Thermal Probe','Thermal Probe'),
+        ('Thermometer','Thermometer'),
+        ('Ultraviolet Spectrometer','Ultraviolet Spectrometer'),
+        ('Weather Station','Weather Station'),
+        ('Wet Chemistry Laboratory','Wet Chemistry Laboratory'),
+        ('X-ray Detector','X-ray Detector'),
+        ('X-ray Diffraction Spectrometer','X-ray Diffraction Spectrometer'),
+        ('X-ray Fluorescence Spectrometer','X-ray Fluorescence Spectrometer'),
+    ]
+    description = models.CharField(max_length=MAX_TEXT_FIELD)
+    facility = models.ForeignKey(Facility, on_delete=models.CASCADE)  # This might be incorrect.
+    instrument_host = models.ForeignKey(InstrumentHost)
+    model_id = models.CharField(max_length=MAX_CHAR_FIELD)
+    naif_instrument_id = models.CharField(max_length=MAX_CHAR_FIELD)
+    name = models.CharField(max_length=MAX_CHAR_FIELD)
+    serial_number = models.CharField(max_length=MAX_CHAR_FIELD)
+    subtype = models.CharField(max_length=MAX_CHAR_FIELD)
+    type_of = models.CharField(max_length=MAX_CHAR_FIELD, choices=INSTRUMENT_TYPES)
+
+    # Meta
+    def __str__(self):
+        return self.name
+
+
+"""
+14.8  Target
+
+Root Class:Tagged_NonDigital_Object
+Role:Concrete
+Class Description:The Target class provides a description of a physical object that is the object of data collection.
+Steward:pds
+Namespace Id:pds
+Version Id:1.3.0.0
+  	Entity 	Card 	Value/Class 	Ind
+Hierarchy	Tagged_NonDigital_Object	 	 	 
+ 	. TNDO_Context	 	 	 
+ 	. . Target	 	 	 
+Subclass	none	 	 	
+Attribute	description	1	 	 
+ 	name	0..1	 	 
+ 	type	0..*	Asteroid	 
+ 	 	 	Calibration	 
+ 	 	 	Calibration Field	 
+ 	 	 	Calibrator	 
+ 	 	 	Comet	 
+ 	 	 	Dust	 
+ 	 	 	Dwarf Planet	 
+ 	 	 	Equipment	 
+ 	 	 	Exoplanet System	 
+ 	 	 	Galaxy	 
+ 	 	 	Globular Cluster	 
+ 	 	 	Lunar Sample	 
+ 	 	 	Meteorite	 
+ 	 	 	Meteoroid	 
+ 	 	 	Meteoroid Stream	 
+ 	 	 	Nebula	 
+ 	 	 	Open Cluster	 
+ 	 	 	Planet	 
+ 	 	 	Planetary Nebula	 
+ 	 	 	Planetary System	 
+ 	 	 	Plasma Cloud	 
+ 	 	 	Plasma Stream	 
+ 	 	 	Ring	 
+ 	 	 	Satellite	 
+ 	 	 	Star	 
+ 	 	 	Star Cluster	 
+ 	 	 	Sun	 
+ 	 	 	Synthetic Sample	 
+ 	 	 	Terrestrial Sample	 
+ 	 	 	Trans-Neptunian Object	 
+Inherited Attribute	none	 	 	 
+Association	data_object	1	Physical_Object	 
+Inherited Association	none	 	 	 
+Referenced from	Product_Context	 	 	 
+"""
+@python_2_unicode_compatible
+class Target(models.Model):
+    TARGET_TYPES = [
+        ('Asteroid','Asteroid'),
+        ('Calibration','Calibration'),
+        ('Calibration Field','Calibration Field'),
+        ('Calibrator','Calibrator'),
+        ('Comet','Comet'),
+        ('Dust','Dust'),
+        ('Dwarf Planet','Dwarf Planet'),
+        ('Equipment','Equipment'),
+        ('Exoplanet System','Exoplanet System'),
+        ('Galaxy','Galaxy'),
+        ('Globular Cluster','Globular Cluster'),
+        ('Lunar Sample','Lunar Sample'),
+        ('Meteorite','Meteorite'),
+        ('Meteoroid','Meteoroid'),
+        ('Meteoroid Stream','Meteoroid Stream'),
+        ('Nebula','Nebula'),
+        ('Open Cluster','Open Cluster'),
+        ('Planet','Planet'),
+        ('Planetary Nebula','Planetary Nebula'),
+        ('Planetary System','Planetary System'),
+        ('Plasma Cloud','Plasma Cloud'),
+        ('Plasma Stream','Plasma Stream'),
+        ('Ring','Ring'),
+        ('Satellite','Satellite'),
+        ('Star','Star'),
+        ('Star Cluster','Star Cluster'),
+        ('Sun','Sun'),
+        ('Synthetic Sample','Synthetic Sample'),
+        ('Target Analog', 'Target Analog'),
+        ('Terrestrial Sample','Terrestrial Sample'),
+        ('Trans-Neptunian Object','Trans-Neptunian Object'),
+    ]
+    description = models.CharField(max_length=MAX_CHAR_FIELD)
+    facility = models.ForeignKey(Facility, on_delete=models.CASCADE)
+    mission = models.ForeignKey(Mission, on_delete=models.CASCADE)
+    name = models.CharField(max_length=MAX_CHAR_FIELD)
+    type_of = models.CharField(max_length=MAX_CHAR_FIELD, choices=TARGET_TYPES)
+
+    # Meta
+    def __str__(self):
+        return self.name
+
+
+
+
 
 
 @python_2_unicode_compatible
@@ -348,6 +779,17 @@ class Data(models.Model):
     data_type = models.CharField(max_length=30, choices=DATA_TYPE_CHOICES, default='Archive',)
 
 
+    # build_directory builds a directory
+    def build_directory(self):
+        data_directory = os.path.join(self.bundle.directory(),'data_{}'.format(self.data_type.lower()))
+        make_directory(data_directory)
+
+    def directory(self):
+        data_collection_name = 'data_{}'.format(self.data_type.lower())
+        data_directory = os.path.join(self.bundle.directory(), data_collection_name)
+        return data_directory  
+
+
     # Meta
     def __str__(self):
         return 'Data associated'  # Better this once we work on data more
@@ -392,11 +834,6 @@ class Product_Bundle(models.Model):
         source_file = os.path.join(settings.TEMPLATE_DIR, 'pds4_labels')
         source_file = os.path.join(source_file, 'base_case')
         source_file = os.path.join(source_file, 'product_bundle.xml')
-
-	#set selected version
-	update = Version()
-	bundle = Bundle()
-	update.version_update(bundle.version, source_file)
 
         # Copy the base case template to the correct directory
         copyfile(source_file, self.label())
@@ -526,11 +963,6 @@ class Product_Collection(models.Model):
         # Locate collection directory and create path for new label
         label_file = os.path.join(self.directory(), self.name_label_case())
 
-	#set selected version
-	#set selected version
-	update = Version()
-	bundle = Bundle()
-	update.version_update(bundle.version, source_file)
 
         # Copy the base case template to the correct directory
         copyfile(source_file, label_file)
@@ -539,6 +971,20 @@ class Product_Collection(models.Model):
 
 
     # Fillers
+    """
+        Fillers follow a set flow.
+            1. Input the root element of an XML label.
+                - We want the root because we can access all areas of the document through it's root.
+            2. Find the areas you want to fill.
+                - Always do find over a static search to ensure we are always on the right element.
+                  (  ex. of static search ->    root[0] = Identification_Area in fill_base_case    )
+                  Originally, ELSA used a static search for faster performance, but we found out
+                  that comments in the XML label through the code off and we were pulling incorrect
+                  elements.
+            3. Fill those areas.
+                - Fill is easy.  Just fill it.. with the information from the model it was called on,
+                  self (like itself).
+    """
     def fill_base_case(self, root):
         Product_Collection = root
          
@@ -589,6 +1035,239 @@ class Product_Collection(models.Model):
 
 
     # Validators
+
+
+"""
+8.3  Product_Observational
+
+Root Class:Product
+Role:Concrete
+
+Class Description:A Product_Observational is a set of one or more information objects produced by an observing system.
+
+Steward:pds
+Namespace Id:pds
+Version Id:1.7.0.0
+  	Entity 	Card 	Value/Class 	Ind
+
+Hierarchy	Product	 	 	 
+         	. Product_Observational	 	 	 
+
+Subclass	        none	 	 	 
+Attribute	        none	 	 	 
+Inherited Attribute	none	 	 	 
+Association	file_area       	1..*	File_Area_Observational	 
+        	file_area_supplemental	0..*	File_Area_Observational_Supplemental	 
+ 	        observation_area	1	Observation_Area	 
+        	reference_list	        0..1	Reference_List	 
+
+Inherited Association	has_identification_area	1	Identification_Area	 
+
+Referenced from	none	 	 	 
+"""
+@python_2_unicode_compatible
+class Product_Observational(models.Model):
+    DOMAIN_TYPES = [
+        ('Atmosphere','Atmosphere'),
+        ('Dynamics','Dynamics'),
+        ('Heliosphere','Heliosphere'),
+        ('Interior','Interior'),
+        ('Interstellar','Interstellar'),
+        ('Ionosphere','Ionosphere'),
+        ('Magnetosphere','Magnetosphere'),
+        ('Rings','Rings'),
+        ('Surface','Surface'),
+    ]
+    DISCIPLINE_TYPES = [
+        ('Atmospheres','Atmospheres'),
+        ('Fields','Fields'),
+        ('Flux Measurements','Flux Measurements'),
+        ('Geosciences','Geosciences'),
+        ('Imaging','Imaging'),
+        ('Particles','Particles'),
+        ('Radio Science','Radio Science'),
+        ('Ring-Moon Systems','Ring-Moon Systems'),
+        ('Small Bodies','Small Bodies'),
+        ('Spectroscopy','Spectroscopy'),
+    ]
+    OBSERVATIONAL_TYPES = [
+
+        ('Table Binary','Table Binary'),
+        ('Table Character','Table Character'),
+        ('Table Delimited','Table Delimited'),
+    ]
+    PROCESSING_LEVEL_TYPES = [
+        ('Calibrated','Calibrated'),
+        ('Derived','Derived'),
+        ('Reduced','Reduced'),
+        ('Raw','Raw'),
+        #('Telemetry','Telemetry'),  Executive Decision made to leave this out.  6-27-2018.
+    ]
+    PURPOSE_TYPES = [
+        ('Calibration','Calibration'),
+        ('Checkout','Checkout'),
+        ('Engineering','Engineering'),
+        ('Navigation','Navigation'),
+        ('Observation Geometry','Observation Geometry'),
+        ('Science','Science'),
+
+    ]
+    bundle = models.ForeignKey(Bundle, on_delete=models.CASCADE)
+    data = models.ForeignKey(Data, on_delete=models.CASCADE)
+    domain = models.CharField(max_length=MAX_CHAR_FIELD, choices=DOMAIN_TYPES, default='Atmosphere')
+    discipline = models.CharField(max_length=MAX_CHAR_FIELD, choices=DISCIPLINE_TYPES, default='Atmospheres')
+    processing_level = models.CharField(max_length=MAX_CHAR_FIELD, choices=PROCESSING_LEVEL_TYPES)
+    purpose = models.CharField(max_length=MAX_TEXT_FIELD, choices=PURPOSE_TYPES)
+    title = models.CharField(max_length=MAX_CHAR_FIELD)
+    type_of = models.CharField(max_length=MAX_CHAR_FIELD, choices=OBSERVATIONAL_TYPES, default='Not_Set')
+
+
+
+    """
+        name_label_case returns the title of the Product Observational in lowercase with underscores rather than spaces
+    """
+    def name_label_case(self):
+        edit_name = self.title.lower()
+        edit_name = replace_all(edit_name, ' ', '_')
+        return edit_name
+
+    """
+       lid returns the lid associated with the Product_Observational label
+    """
+    def lid(self):
+        edit_name = self.name_label_case()
+        lid = 'urn:{0}:{1}:data_{2}:{3}'.format(self.bundle.user.userprofile.agency, self.bundle.name_lid_case(), self.processing_level.lower(), self.name_label_case())
+        return lid
+        
+
+    """
+       label returns the physical label location in ELSAs archive
+    """
+    def label(self):
+        edit_name = '{}.xml'.format(self.name_label_case())
+        return os.path.join(self.data.directory(), edit_name)
+
+
+
+    # Label Constructors
+    def build_base_case(self):
+        
+        # Locate base case Product_Collection template found in templates/pds4_labels/base_case/
+        source_file = os.path.join(PDS4_LABEL_TEMPLATE_DIRECTORY, 'base_case')
+        source_file = os.path.join(source_file, 'product_observational.xml')
+
+        # Locate collection directory and create path for new label
+        edit_name = '{}.xml'.format(self.name_label_case())
+        label_file = os.path.join(self.data.directory(), edit_name)
+
+
+        # Copy the base case template to the correct directory
+        copyfile(source_file, label_file)
+            
+        return
+
+
+    # Fillers
+    """
+        Fillers follow a set flow.
+            1. Input the root element of an XML label.
+                - We want the root because we can access all areas of the document through it's root.
+            2. Find the areas you want to fill.
+                - Always do find over a static search to ensure we are always on the right element.
+                  (  ex. of static search ->    root[0] = Identification_Area in fill_base_case    )
+                  Originally, ELSA used a static search for faster performance, but we found out
+                  that comments in the XML label through the code off and we were pulling incorrect
+                  elements.
+            3. Fill those areas.
+                - Fill is easy.  Just fill it.. with the information from the model it was called on,
+                  self (like itself).
+    """
+    def fill_base_case(self, root):
+
+        Identification_Area = root.find('{}Identification_Area'.format(NAMESPACE))
+
+
+        logical_identifier = Identification_Area.find('{}logical_identifier'.format(NAMESPACE))
+        logical_identifier.text = self.lid()
+        title = Identification_Area.find('{}title'.format(NAMESPACE))
+        title.text = self.title
+
+        Observation_Area = root.find('{}Observation_Area'.format(NAMESPACE))
+        Primary_Result_Summary = Observation_Area.find('{}Primary_Result_Summary'.format(NAMESPACE))
+        processing_level = Primary_Result_Summary.find('{}processing_level'.format(NAMESPACE))
+        processing_level = self.processing_level
+        Science_Facets = Primary_Result_Summary.find('{}Science_Facets'.format(NAMESPACE))
+        domain = Science_Facets.find('{}domain'.format(NAMESPACE))
+        domain.text = self.domain
+        discipline_name = Science_Facets.find('{}discipline_name'.format(NAMESPACE))
+        discipline_name.text = self.discipline
+        
+        # ASK LYNN ABOUT THIS --------------------------------------------------------------------
+        Investigation_Area = root.find('{}Investigation_Area'.format(NAMESPACE))
+        # ----------------------------------------------------------------------------------------
+
+        return root
+
+    """
+        fill_observational
+    """
+    def fill_observational(self, label_root, observational):
+        Product_Observational = label_root
+
+        File_Area_Observational = Product_Observational.find('{}File_Area_Observational'.format(NAMESPACE))
+
+        Observational_Tag_Name = replace_all(self.type_of, ' ', '_')
+        Observational_Tag = etree.SubElement(File_Area_Observational, Observational_Tag_Name)
+
+        name = etree.SubElement(Observational_Tag, 'name')
+        name.text = observational.name
+
+        local_identifier = etree.SubElement(Observational_Tag, 'local_identifier')
+          # NEED TO MAKE        local_identifier.text = observational.local_identifier() 
+
+        offset = etree.SubElement(Observational_Tag, 'offset')
+        offset.attrib['unit'] = 'byte'
+        offset.text = observational.offset
+
+        object_length = etree.SubElement(Observational_Tag, 'object_length')
+        object_length.attrib['unit'] = 'byte'
+        object_length.text = observational.object_length
+   
+        parsing_standard_id = etree.SubElement(Observational_Tag, 'parsing_standard_id')
+        parsing_standard_id.text = 'PDS DSV 1'
+
+        description = etree.SubElement(Observational_Tag, 'description')
+        description.text = observational.description
+
+        records = etree.SubElement(Observational_Tag, 'records')
+        records.text = observational.records
+
+        record_delimiter = etree.SubElement(Observational_Tag, 'record_delimiter')
+        record_delimiter.text = 'Carriage-Return Line-Feed'
+     
+        field_delimiter = etree.SubElement(Observational_Tag, 'field_delimiter')
+        field_delimiter.text = 'Need to Fix' # --------------------------------FIX ME----------
+
+        # Start Record Delimited Section
+        Record_Delimited = etree.SubElement(Observational_Tag, 'Record_Delimited')
+        fields = etree.SubElement(Record_Delimited, 'fields')
+        fields.text = observational.fields
+        groups = etree.SubElement(Record_Delimited, 'groups')
+        groups.text = observational.groups
+
+        # Add loop  - Ask Lynn how he wants to do this, again.
+
+        # End
+        return Product_Observational
+        
+    """
+    """
+    # Meta
+    def __str__(self):
+        
+        return "Product_Observational at: {}".format(self.title)
+
+
 
 
 
@@ -693,10 +1372,6 @@ class Product_Document(models.Model):
         # Locate collection directory and create path for new label
         label_file = os.path.join(self.directory(), self.name_label_case())
 
-	#set selected version
-	update = Version()
-	bundle = Bundle()
-	update.version_update(bundle.version, source_file)
 
         # Copy the base case template to the correct directory
         copyfile(source_file, label_file)
@@ -922,12 +1597,39 @@ class Citation_Information(models.Model):
     def __str__(self):
         return 'Need to finish this.'
 
-"""
-"""
-#class I
 
-    # Admin Stuff
+"""
+    The Table model object can be one of the three accepted table types given in PDS4.
+"""
+@python_2_unicode_compatible
+class Table(models.Model):
 
+    OBSERVATIONAL_TYPES = [
+
+        ('Table Binary','Table Binary'),
+        ('Table Character','Table Character'),
+        ('Table Delimited','Table Delimited'),
+    ]
+    product_observational = models.ForeignKey(Product_Observational, on_delete=models.CASCADE)
+    name = models.CharField(max_length=MAX_CHAR_FIELD)
+    observational_type = models.CharField(max_length=MAX_CHAR_FIELD, choices=OBSERVATIONAL_TYPES)
+    local_identifier = models.CharField(max_length=MAX_CHAR_FIELD)
+    offset = models.CharField(max_length=MAX_CHAR_FIELD)
+    object_length = models.CharField(max_length=MAX_CHAR_FIELD)
+    description = models.CharField(max_length=MAX_CHAR_FIELD)
+    records = models.CharField(max_length=MAX_CHAR_FIELD)
+    fields = models.CharField(max_length=MAX_CHAR_FIELD)
+    groups = models.CharField(max_length=MAX_CHAR_FIELD)
+
+
+    # meta
+    def __str__(self):
+        return 'Table Binary: {}'.format(self.name)
+
+
+
+
+    
 
 
 
